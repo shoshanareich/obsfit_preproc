@@ -1,0 +1,7 @@
+1. Open filenames_hourly_map.ipynb and specify the swot cycles and directory. Then run the notebook to create all_days, which lists the python commands to execute.
+2. qsub submit_swot_regridding.sh
+	a. this runs the regridding script for each pass in the specified cycles
+	b. output files will be in /nobackup/sreich/swot/swot_obsfit_L2/ 
+3. combine swot hourly files by running in regridded_data: ls -v swot2018*.bin | xargs cat > swot_2015.bin
+
+
