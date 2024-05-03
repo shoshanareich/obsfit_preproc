@@ -2,6 +2,6 @@ all_runs
 test_runs
 errfile
 outfile
-.ipynb_checkpoints
+.ipynb_checkpoints/
 */.ipynb_checkpoints
 __pycache__
