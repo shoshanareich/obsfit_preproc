@@ -12,7 +12,7 @@ from patchface3D import *
 
 ### Load in LLC Grid ###
 
-sNx = sys.argv[3]
+sNx = int(sys.argv[3])
 sNy=sNx
 
 grid_dir='/nobackup/sreich/llc1080_c68w_runs/run/'
@@ -62,7 +62,7 @@ ds_swot_sub.ssha_karin_2.values = ssha
 ### Compute _interp fields ###
 
 # reshape xc, yc from compact (13*nx, nx) form to worldmap view (nz=1,4*nx, 4*nx)
-nx = sys.argv[2]
+nx = int(sys.argv[2])
 
 xc = rdmds(grid_dir+'XC')
 yc = rdmds(grid_dir+'YC')
