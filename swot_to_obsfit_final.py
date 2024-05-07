@@ -58,6 +58,8 @@ ds_swot_sub.ssha_karin_2.values = ssha
 ssha[np.abs(ssha) > 0.3] = np.nan
 ds_swot_sub.ssha_karin_2.values = ssha
 
+ds_swot_sub['ssh_processed'] = ds_swot_sub.ssha_karin_2 + ds_swot_sub.mean_dynamic_topography
+
 
 ### Compute _interp fields ###
 
@@ -152,7 +154,7 @@ df_swot = ds_swot_sub.to_dataframe()
 gb = df_swot.groupby(['sample_interp_XC11', 'sample_interp_YC11', 'sample_interp_XCNINJ', 'sample_interp_YCNINJ', 'sample_interp_i', 'sample_interp_j'])
 counts = gb.size().to_frame(name='counts')
 gb_stats = (counts
-.join(gb.agg({'ssha_karin_2': 'mean'}).rename(columns={'ssha_karin_2': 'obs_val'}))
+.join(gb.agg({'ssha_karin_2': 'mean'}).rename(columns={'ssh_processed': 'obs_val'}))
 .join(gb.agg({'ssha_karin_2': 'std'}).rename(columns={'ssha_karin_2': 'ssha_karin_2_std'}))
 .join(gb.agg({'latitude': 'mean'}).rename(columns={'latitude': 'sample_x'}))
 .join(gb.agg({'longitude': 'mean'}).rename(columns={'longitude': 'sample_y'}))
@@ -182,10 +184,14 @@ obs = xr.Dataset(
         obs_date           =(["iOBS"], gb_stats.obs_date.values),
         obs_YYYYMMDD       =(["iOBS"], gb_stats.obs_YYYYMMDD.values),
         obs_HHMMSS         =(["iOBS"], gb_stats.obs_HHMMSS.values), 
-        sample_x           =(["iSAMPLE"], gb_stats.sample_x.values),
-        sample_y           =(["iSAMPLE"], gb_stats.sample_y.values),
-        sample_z           =(["iSAMPLE"], np.zeros(len(gb_stats.sample_y.values))),
-        sample_type        =(["iSAMPLE"], 5*np.ones(len(gb_stats.sample_y.values))),
+#        sample_x           =(["iSAMPLE"], gb_stats.sample_x.values),
+#        sample_y           =(["iSAMPLE"], gb_stats.sample_y.values),
+#        sample_z           =(["iSAMPLE"], np.zeros(len(gb_stats.sample_y.values))),
+#        sample_type        =(["iSAMPLE"], 5*np.ones(len(gb_stats.sample_y.values))),
+        sample_x           =(["iOBS"], gb_stats.sample_x.values),
+        sample_y           =(["iOBS"], gb_stats.sample_y.values),
+        sample_z           =(["iOBS"], np.zeros(len(gb_stats.sample_y.values))),
+        sample_type        =(["iOBS"], 5*np.ones(len(gb_stats.sample_y.values))),
         obs_val            =(["iOBS"], gb_stats.obs_val.values),
         obs_uncert         =(["iOBS"], np.sqrt(1/obs_weight)),
         sample_interp_XC11 =(["iOBS"], gb_stats.sample_interp_XC11.values ),
@@ -194,7 +200,7 @@ obs = xr.Dataset(
         sample_interp_YCNINJ =(["iOBS"], gb_stats.sample_interp_YCNINJ.values ),
         sample_interp_i =(["iOBS"], gb_stats.sample_interp_i.values ),
         sample_interp_j =(["iOBS"], gb_stats.sample_interp_j.values ),
-        sample_interp_w =(["iOBS", "iINTERP"], np.ones((len(gb_stats.sample_interp_i),8))/8  )
+#        sample_interp_w =(["iOBS", "iINTERP"], np.ones((len(gb_stats.sample_interp_i),8))/8  )
     ),
 )
 
