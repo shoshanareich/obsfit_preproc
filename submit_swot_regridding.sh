@@ -15,6 +15,6 @@ module load miniconda3/v4
 source activate py38
 
 #cd /home3/mgoldbe1/smart_cables/synthetic_data_extraction/
-parallel --slf $PBS_NODEFILE -j 1156 -a /home3/sreich/obsfit_preproc/all_runs
+parallel --slf $PBS_NODEFILE -j 1156 -a /home3/sreich/obsfit_preproc/cycle9_runs
 
 date +%Y/%m/%d_%H:%M:%S.%3N >> regrid_swot_timing.txt

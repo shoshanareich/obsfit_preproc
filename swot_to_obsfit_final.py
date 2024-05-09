@@ -28,37 +28,47 @@ yc = rdmds(grid_dir+'YC')
 
 ### Read in SWOT Data from Input Args ###
 
-pth = '/nobackup/sreich/swot/SWOT_L2_LR_SSH_2.0/Expert/'
+pth = '/nobackup/sreich/swot/L3_aviso/cycle_009/'
 filename = sys.argv[1] # sys.argv[0] is name of python file
 
 
 ds_swot = xr.open_dataset(pth + filename)
-ds_swot = ds_swot.drop_dims('num_sides')
+ds_swot = ds_swot.drop_dims('num_nadir')
 ds_swot['longitude'] = (ds_swot['longitude'] + 180) % 360 - 180
 
-ds_swot_sub = ds_swot.where(ds_swot.ancillary_surface_classification_flag == 0, drop=True)
-swot_coords = np.c_[ds_swot_sub.latitude.values.ravel(), ds_swot_sub.longitude.values.ravel()]
+swot_coords = np.c_[ds_swot.latitude.values.ravel(), ds_swot.longitude.values.ravel()]
 
 
-# apply corrections
-ssha = ds_swot_sub.ssha_karin_2
-flag = ds_swot_sub.ancillary_surface_classification_flag
-ssha = np.where(flag == 0, ssha, np.nan)
+# apply corrections if using L2 data
+if 'L2' in filename:
+    ssha = ds_swot.ssha_karin_2
+    flag = ds_swot.ancillary_surface_classification_flag
+    ssha = np.where(flag == 0, ssha, np.nan)
+    
+    distance = ds_swot.cross_track_distance.values
+    
+    ssha = swot.fit_bias(
+            ssha, distance,
+            check_bad_point_threshold=0.1,
+            remove_along_track_polynomial=True
+        )
 
-distance = ds_swot_sub.cross_track_distance.values
+    ssha[np.abs(ssha) > 0.3] = np.nan
+    ds_swot.ssha_karin_2.values = ssha
+    
+    ds_swot['ssh_processed'] = ds_swot.ssha_karin_2 + ds_swot.mean_dynamic_topography
+    
 
-ssha = swot.fit_bias(
-        ssha, distance,
-        check_bad_point_threshold=0.1,
-        remove_along_track_polynomial=True
-    )
+#### nadir already removed?? ####
+ssha = ds_swot['ssha'].values
 
-ds_swot_sub.ssha_karin_2.values = ssha
+mask = (ds_swot['quality_flag'] == 0).values
+ssha = mask * ssha
 
 ssha[np.abs(ssha) > 0.3] = np.nan
-ds_swot_sub.ssha_karin_2.values = ssha
 
-ds_swot_sub['ssh_processed'] = ds_swot_sub.ssha_karin_2 + ds_swot_sub.mean_dynamic_topography
+ds_swot['ssh'] = ssha + ds_swot.mdt
+
 
 
 ### Compute _interp fields ###
@@ -138,24 +148,24 @@ for key in tile_keys:
 
 # reshape for num_lines, num_pixels
 for key in tile_dict.keys():
-    tile_dict[key] = tile_dict[key].reshape(ds_swot_sub.ssh_karin_2.shape)
+    tile_dict[key] = tile_dict[key].reshape(ds_swot.ssha.shape)
 
 # add interp fields to xarray
 for key, item in tile_dict.items():
     dims = ('num_lines', 'num_pixels')  # Replace with your actual dimension names
     var_da = xr.DataArray(item, dims=dims, name=key)
-    ds_swot_sub[key] = var_da
+    ds_swot[key] = var_da
 
 
 # up until this point, we have obsfit fields for each individual swot point
 # now can group and average all swot ssha values in same llc grid square
 
-df_swot = ds_swot_sub.to_dataframe()
+df_swot = ds_swot.to_dataframe()
 gb = df_swot.groupby(['sample_interp_XC11', 'sample_interp_YC11', 'sample_interp_XCNINJ', 'sample_interp_YCNINJ', 'sample_interp_i', 'sample_interp_j'])
 counts = gb.size().to_frame(name='counts')
 gb_stats = (counts
-.join(gb.agg({'ssha_karin_2': 'mean'}).rename(columns={'ssh_processed': 'obs_val'}))
-.join(gb.agg({'ssha_karin_2': 'std'}).rename(columns={'ssha_karin_2': 'ssha_karin_2_std'}))
+.join(gb.agg({'ssh': 'mean'}).rename(columns={'ssh': 'obs_val'}))
+.join(gb.agg({'ssh': 'std'}).rename(columns={'ssh': 'ssh_std'}))
 .join(gb.agg({'latitude': 'mean'}).rename(columns={'latitude': 'sample_x'}))
 .join(gb.agg({'longitude': 'mean'}).rename(columns={'longitude': 'sample_y'}))
 .join(gb.agg({'time': 'mean'}).rename(columns={'time': 'time_mean'}))
@@ -207,7 +217,7 @@ obs = xr.Dataset(
 obs = obs.assign_coords({'longitude': obs.sample_x, 'latitude': obs.sample_y})
 
 
-data_dir = '/nobackup/sreich/swot/swot_obsfit_L2/'
+data_dir = '/nobackup/sreich/swot/swot_obsfit_L3/cycle_009/'
 fname = filename.split('.')[0] + '_obsfit.nc'
 obs.to_netcdf(data_dir + fname)
 
