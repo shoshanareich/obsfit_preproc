@@ -28,7 +28,7 @@ yc = rdmds(grid_dir+'YC')
 
 ### Read in SWOT Data from Input Args ###
 
-pth = '/nobackup/sreich/swot/L3_aviso/cycle_009/'
+pth = '/nobackup/sreich/swot/L3_aviso/cycle_010/'
 filename = sys.argv[1] # sys.argv[0] is name of python file
 
 
@@ -217,11 +217,11 @@ obs = xr.Dataset(
 obs = obs.assign_coords({'longitude': obs.sample_x, 'latitude': obs.sample_y})
 
 
-data_dir = '/nobackup/sreich/swot/swot_obsfit_L3/cycle_009/'
+data_dir = '/nobackup/sreich/swot/swot_obsfit_L3/cycle_010/'
 fname = filename.split('.')[0] + '_obsfit.nc'
 obs.to_netcdf(data_dir + fname)
 
 
-
+print('done ' + fname)
 
 

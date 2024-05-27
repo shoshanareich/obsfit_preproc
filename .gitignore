@@ -1,7 +1,9 @@
-all_runs
-test_runs
+*_runs
 errfile
 outfile
+*test*
+regrid_swot_timing.txt
+*.m
 .ipynb_checkpoints/
 */.ipynb_checkpoints
 __pycache__
