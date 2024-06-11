@@ -1,4 +1,5 @@
-1. Open filenames_hourly_map.ipynb and specify the swot cycles and directory. Then run the scriptto create text file, which lists the python commands to execute.
+1. Open filenames_hourly_map.ipynb and specify the swot cycles and directory. Then run the script to create text file, which lists the python commands to execute.
+2. Change pth and data_dir in swot_to_obsfit_final.py
 2. qsub submit_swot_regridding.sh
 	a. this runs the regridding script for each pass in the specified cycles
 	b. output files will be in /nobackup/sreich/swot/swot_obsfit_L3/ 
@@ -7,4 +8,4 @@
 TO-DO:
 - use better uncertainty than 0.02 
 - fix where uncertainty is set (currently in both swot_to_obsfit_final.py and merge_files.ipynb)
-
+- implement super-obsing

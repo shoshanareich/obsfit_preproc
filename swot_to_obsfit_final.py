@@ -15,7 +15,8 @@ from patchface3D import *
 sNx = int(sys.argv[3])
 sNy=sNx
 
-grid_dir='/nobackup/sreich/llc1080_c68w_runs/run/'
+#grid_dir='/nobackup/sreich/llc1080_c68w_runs/run/'
+grid_dir='/nobackup/sreich/llc270_c68w_runs/run_pk0000841536_1200s_tidesOFF/'
 hfc = rdmds(grid_dir+'hFacC', lev=0)
 hfc[hfc!=0]=np.nan
 # Convert to dict of 5 faces, sizes [(270,90), (270,90), (90,90), (90,270), (90,270)]
@@ -217,7 +218,7 @@ obs = xr.Dataset(
 obs = obs.assign_coords({'longitude': obs.sample_x, 'latitude': obs.sample_y})
 
 
-data_dir = '/nobackup/sreich/swot/swot_obsfit_L3/cycle_010/'
+data_dir = '/nobackup/sreich/swot/swot_obsfit_L3/cycle_010_llc270_30/'
 fname = filename.split('.')[0] + '_obsfit.nc'
 obs.to_netcdf(data_dir + fname)
 

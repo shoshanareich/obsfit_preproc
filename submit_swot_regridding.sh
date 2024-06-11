@@ -17,6 +17,6 @@ module use -a /swbuild/analytix/tools/modulefiles
 module load miniconda3/v4
 source activate py38
 
-/nasa/pkgsrc/toss4/2023Q3/bin/parallel -j 14 --slf $PBS_NODEFILE -a /home3/sreich/obsfit_preproc/cycle10_runs
+/nasa/pkgsrc/toss4/2023Q3/bin/parallel -j 14 --slf $PBS_NODEFILE -a /home3/sreich/obsfit_preproc/cycle10_270_30_runs
 
 date +%Y/%m/%d_%H:%M:%S.%3N >> regrid_swot_timing.txt
