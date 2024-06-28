@@ -10,3 +10,7 @@ TO-DO:
 - use better uncertainty than 0.02 
 - fix where uncertainty is set (currently in both swot_to_obsfit_final.py and merge_files.ipynb)
 - implement super-obsing
+- modify uncertainty to account for spatial averaging
+- tides:
+	- should tides be added to SWOT ssh if DivA resolution is coarse?
+	- see Gerard's note about using L3 ssha_noiseless + tides
