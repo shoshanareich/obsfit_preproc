@@ -13,4 +13,4 @@ TO-DO:
 - modify uncertainty to account for spatial averaging
 - tides:
 	- should tides be added to SWOT ssh if DivA resolution is coarse?
-	- see Gerard's note about using L3 ssha_noiseless + tides
+	-  see Gerard's note about using L3 ssha_noiseless + tides
