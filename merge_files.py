@@ -22,14 +22,14 @@ def merge_per_cycle(directory):
     return merged
 
 
-directory9 = '/nobackup/sreich/swot/swot_obsfit_L3/cycle_009_llc270_45'
-directory10 = '/nobackup/sreich/swot/swot_obsfit_L3/cycle_010_llc270_45'
+directory9 = '/nobackup/sreich/swot/swot_obsfit_L3/cycle_009_llc90_30'
+#directory10 = '/nobackup/sreich/swot/swot_obsfit_L3/cycle_010_llc270_45'
 
 merged9 = merge_per_cycle(directory9)
-merged10 = merge_per_cycle(directory10)
+#merged10 = merge_per_cycle(directory10)
 
-ds_all = xr.concat([merged9, merged10], dim='iOBS')
-#ds_all = merged9
+#ds_all = xr.concat([merged9, merged10], dim='iOBS')
+ds_all = merged9
 
 #half = range(0, int(1000000))
 #ds_all = ds_all.isel(iOBS=half)
@@ -57,5 +57,5 @@ obs = xr.Dataset(
 
 
 data_dir = '/nobackup/sreich/swot/swot_obsfit_L3/'
-fname =  'swot_cycles_009_llc270_45_test_obsfit.nc'
+fname =  'swot_cycles_009_llc90_30_test_obsfit.nc'
 obs.to_netcdf(data_dir + fname)

@@ -1,12 +1,12 @@
 import os
 
 # user defined SWOT cycles\
-cycles = [10]
+cycles = [9]
 sNx = 30 #180
-Nx = 270 #1080
+Nx = 90 #1080
 
-with open("cycle10_270_30_runs", "w", newline = '') as a:
-    for path, sub_dirs, files in os.walk('/nobackup/sreich/swot/L3_aviso/cycle_010'):
+with open("/home3/sreich/obsfit_preproc/cycle9_90_30_runs", "w", newline = '') as a:
+    for path, sub_dirs, files in os.walk('/nobackup/sreich/swot/L3_aviso/cycle_009'):
 
         # check if file is in desired cycles\
         for filename in sorted(files):

@@ -16,7 +16,8 @@ sNx = int(sys.argv[3])
 sNy=sNx
 
 #grid_dir='/nobackup/sreich/llc1080_c68w_runs/run/'
-grid_dir='/nobackup/sreich/llc270_c68w_runs/run_pk0000841536_1200s_tidesOFF/'
+#grid_dir='/nobackup/sreich/llc270_c68w_runs/run_pk0000841536_1200s_tidesOFF/'
+grid_dir='/nobackup/sreich/multigrid_jpl_obsfit/llc90/run.v4_rls4.077d3.iter0.swot1992.fwd/'
 hfc = rdmds(grid_dir+'hFacC', lev=0)
 hfc[hfc!=0]=np.nan
 # Convert to dict of 5 faces, sizes [(270,90), (270,90), (90,90), (90,270), (90,270)]
@@ -29,7 +30,7 @@ yc = rdmds(grid_dir+'YC')
 
 ### Read in SWOT Data from Input Args ###
 
-pth = '/nobackup/sreich/swot/L3_aviso/cycle_010/'
+pth = '/nobackup/sreich/swot/L3_aviso/cycle_009/'
 filename = sys.argv[1] # sys.argv[0] is name of python file
 
 
@@ -89,61 +90,70 @@ llc_coords = np.c_[yc.ravel(), xc.ravel()]
 kd_tree = KDTree(llc_coords)
 distance, nearest_swot_index_in_llc = kd_tree.query(swot_coords, k=1)
 
-# transform xc and yc from worldmap (4*nx, 4*nx) to 5-face view
-tileCount=0
 
-xgrid = patchface3D_wrld_to_5f(xc)
-ygrid = patchface3D_wrld_to_5f(yc)
+def get_tile_dict(xc, yc, prof_point, sNx, sNy):
+    def make_empty_5f(xgrid):
+        tmp = dict();
+        for face in range(1, 6): tmp[face] = np.zeros_like(xgrid[face])
+        return tmp
 
-for i in range(1,6):
-    xgrid[i] = np.squeeze(xgrid[i])
-    ygrid[i] = np.squeeze(ygrid[i])
+    
+    # transform xc and yc from worldmap back to 5faces
+    #xc_5faces = patchface3D_wrld_to_5f(xc[np.newaxis, :, :])
+    #yc_5faces = patchface3D_wrld_to_5f(yc[np.newaxis, :, :])
+    xc_5faces = patchface3D_wrld_to_5f(xc)
+    yc_5faces = patchface3D_wrld_to_5f(yc)
 
-XC11=dict(zip(range(1,6), [np.zeros_like(xgrid[i]) for i in range(1,6)]))
-YC11=dict(zip(range(1,6), [np.zeros_like(xgrid[i]) for i in range(1,6)]))
-XCNINJ=dict(zip(range(1,6), [np.zeros_like(xgrid[i]) for i in range(1,6)]))
-YCNINJ=dict(zip(range(1,6), [np.zeros_like(xgrid[i]) for i in range(1,6)]))
-iTile=dict(zip(range(1,6), [np.zeros_like(xgrid[i]) for i in range(1,6)]))
-jTile=dict(zip(range(1,6), [np.zeros_like(xgrid[i]) for i in range(1,6)]))
-tileNo=dict(zip(range(1,6), [np.zeros_like(xgrid[i]) for i in range(1,6)]))
+    xgrid = xc_5faces.copy()
+    ygrid = yc_5faces.copy()
 
-# FOR face = 1..5: Do the [X,Y]C[11,NINJ] routine
-for key in xgrid.keys():
-    face_XC = xgrid[key] 
-    face_YC = ygrid[key]
-    for ii in range(int(face_XC.shape[1]/sNx)):
-        for jj in range(int(face_XC.shape[0]/sNy)):
-            tileCount += 1
-            tmp_i = np.arange(sNx)+sNx*ii
-            tmp_j = np.arange(sNy)+sNx*jj
-            tmp_XC = face_XC[ np.ix_( tmp_j, tmp_i ) ]
-            tmp_YC = face_YC[ np.ix_( tmp_j, tmp_i ) ]
-            XC11[key][ np.ix_( tmp_j, tmp_i ) ] = tmp_XC[0,0]
-            YC11[key][ np.ix_( tmp_j, tmp_i ) ] = tmp_YC[0,0]
-            XCNINJ[key][ np.ix_( tmp_j, tmp_i ) ] = tmp_XC[-1,-1]
-            YCNINJ[key][ np.ix_( tmp_j, tmp_i ) ] = tmp_YC[-1,-1]
-            iTile[key][ np.ix_( tmp_j, tmp_i ) ] = np.ones((sNx,1)) * np.arange(1,sNy+1)
-            jTile[key][ np.ix_( tmp_j, tmp_i ) ] = (np.arange(1,sNx+1) * np.ones((sNy,1))).T
-            tileNo[key][ np.ix_( tmp_j, tmp_i ) ] = tileCount*np.ones((sNy,sNx))
+    XC11 = make_empty_5f(xgrid)
+    YC11 = make_empty_5f(xgrid)
+    XCNINJ = make_empty_5f(xgrid)
+    YCNINJ = make_empty_5f(xgrid)
+    iTile = make_empty_5f(xgrid)
+    jTile = make_empty_5f(xgrid)
+    tileNo = make_empty_5f(xgrid)
 
-tile_keys = ['XC11', 'YC11', 'XCNINJ', 'YCNINJ', 'i', 'j']
-tile_vals = [XC11, YC11, XCNINJ, YCNINJ, iTile, jTile]
-tile_data_in = dict(zip(tile_keys, tile_vals))
-tile_dict = dict()
-for key in tile_keys:
-
-    # - Line 68: sneakily turn each [X,Y]C[11,NINJ] field from 5-face  to compact
-    temp = tile_data_in[key]
-    temp = np.concatenate((temp[1], temp[2], temp[3], temp[4].T, temp[5].T))
-
-    # - Line 69: Change each field from compact to worldmap (she has done so in her python function)
-    tile_data_in[key] = patchface3D(temp,nx,1)
-
-    # - Line 70: Use the obs_point (which was created relative to worldmap view) to grab the index from each field, 
-    # which are now properly in worldmap view.
-    tile_dict['sample_interp_' + key] = tile_data_in[key].ravel()[nearest_swot_index_in_llc]
+    tileCount=0
+    for iF in range(1, len(xgrid)+1):
+        face_XC = xgrid[iF][0]
+        face_YC = ygrid[iF][0]
+        for ii in range(face_XC.shape[0] // sNx):
+            for jj in range(face_XC.shape[1] // sNy):
+                tileCount += 1
+                tmp_i = slice(sNx * ii, sNx * (ii + 1))
+                tmp_j = slice(sNy * jj, sNy * (jj + 1))
+                tmp_XC = face_XC[tmp_i, tmp_j]
+                tmp_YC = face_YC[tmp_i, tmp_j]
+                XC11[iF][0][tmp_i, tmp_j] = tmp_XC[0, 0]
+                YC11[iF][0][tmp_i, tmp_j] = tmp_YC[0, 0]
+                XCNINJ[iF][0][tmp_i, tmp_j] = tmp_XC[-1, -1]
+                YCNINJ[iF][0][tmp_i, tmp_j] = tmp_YC[-1, -1]
+                iTile[iF][0][tmp_i, tmp_j] = np.outer(np.ones(sNx), np.arange(1, sNy + 1))
+                jTile[iF][0][tmp_i, tmp_j] = np.outer(np.arange(1, sNx + 1), np.ones(sNy))
+                tileNo[iF][0][tmp_i, tmp_j] = tileCount * np.ones((sNx, sNy))
 
 
+    tile_keys = ['XC11', 'YC11', 'XCNINJ', 'YCNINJ', 'i', 'j']
+
+
+    XC11 = patchface3D_5f_to_wrld(XC11)[0,:,:]
+    YC11 = patchface3D_5f_to_wrld(YC11)[0,:,:]
+    XCNINJ = patchface3D_5f_to_wrld(XCNINJ)[0,:,:]
+    YCNINJ = patchface3D_5f_to_wrld(YCNINJ)[0,:,:]
+    iTile = patchface3D_5f_to_wrld(iTile)[0,:,:]
+    jTile = patchface3D_5f_to_wrld(jTile)[0,:,:]
+
+    tile_vals = [XC11, YC11, XCNINJ, YCNINJ, iTile, jTile]
+
+    tile_dict = dict()
+    for key, val in zip(tile_keys, tile_vals):
+        tile_dict['sample_interp_' + key] = val.ravel()[prof_point]
+    return tile_dict
+
+
+tile_dict = get_tile_dict(xc, yc, nearest_swot_index_in_llc, sNx, sNy)
 
 ### Add obs_interp_ fields to data ###
 
@@ -218,7 +228,7 @@ obs = xr.Dataset(
 obs = obs.assign_coords({'longitude': obs.sample_x, 'latitude': obs.sample_y})
 
 
-data_dir = '/nobackup/sreich/swot/swot_obsfit_L3/cycle_010_llc270_30/'
+data_dir = '/nobackup/sreich/swot/swot_obsfit_L3/cycle_009_llc90_30/'
 fname = filename.split('.')[0] + '_obsfit.nc'
 obs.to_netcdf(data_dir + fname)
 
