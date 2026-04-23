@@ -1,16 +1,5 @@
-1. Open filenames_hourly_map.ipynb and specify the swot cycles and directory. Then run the script to create text file, which lists the python commands to execute.
-2. Change pth and data_dir in swot_to_obsfit_final.py
-3. qsub submit_swot_regridding.sh
+1. Run filenames_hourly_map.py and specify the swot cycles and directory. Also specify resolution - LR or HR. This creates a txt file that lists the python commands to execute.
+2. qsub submit_swot_regridding.sh
 	a. this runs the regridding script for each pass in the specified cycles
-	b. output files will be in /nobackup/sreich/swot/swot_obsfit_L3/ 
-4. Combine swot hourly files by running merge_files.py
-        a. change directory9, directory10, and fname
-
-TO-DO:
-- use better uncertainty than 0.02 
-- fix where uncertainty is set (currently in both swot_to_obsfit_final.py and merge_files.ipynb)
-- implement super-obsing
-- modify uncertainty to account for spatial averaging
-- tides:
-	- should tides be added to SWOT ssh if DivA resolution is coarse?
-	-  see Gerard's note about using L3 ssha_noiseless + tides
+	b. output files will be in /scratch/shoshi/swot/obsfit_labsea/cycle9/ SPECIFY IN swot_to_regridd... 
+3. combine swot hourly files by running merge_files.py

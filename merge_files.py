@@ -1,61 +1,35 @@
 import os
+import glob
 import xarray as xr
 import numpy as np
-import pandas as pd
-
-def load_netcdf_files(directory):
-    files = [f for f in os.listdir(directory) if f.endswith('.nc')]
-    datasets = [xr.open_dataset(os.path.join(directory, f)) for f in files]
-    return datasets
-
-def merge_per_cycle(directory):
-    datasets = load_netcdf_files(directory)
-
-    merged = None
-
-    for ds in datasets:
-        if merged is None:
-            merged = ds
-        elif len(ds.iOBS) > 0:
-            merged = xr.concat([merged, ds], dim='iOBS')
-
-    return merged
 
 
-directory9 = '/nobackup/sreich/swot/swot_obsfit_L3/cycle_009_llc90_30'
-#directory10 = '/nobackup/sreich/swot/swot_obsfit_L3/cycle_010_llc270_45'
+# Get a list of all NetCDF files
+#files = sorted(glob.glob("/scratch/shoshi/swot/obsfit_labsea/cycle1[2-4]_L3v3/*.nc"))
+files = sorted(glob.glob("/scratch/shoshi/swot/obsfit_labsea/cycle1[8-9]_L3v3/*.nc") + glob.glob("/scratch/shoshi/swot/obsfit_labsea/cycle20_L3v3/*.nc"))
 
-merged9 = merge_per_cycle(directory9)
-#merged10 = merge_per_cycle(directory10)
+# Open all files as a list of xarray datasets
+datasets = [xr.open_dataset(f) for f in files]
 
-#ds_all = xr.concat([merged9, merged10], dim='iOBS')
-ds_all = merged9
+# Concatenate along iOBS
+ds = xr.concat(datasets, dim="iOBS", data_vars="all", coords="all", compat="override")
 
-#half = range(0, int(1000000))
-#ds_all = ds_all.isel(iOBS=half)
+# Get length of iOBS
+nobs = ds.dims["iOBS"]
 
-obs = xr.Dataset(
-    data_vars=dict(
-        obs_date           =(["iOBS"], ds_all.obs_date.values),
-        obs_YYYYMMDD       =(["iOBS"], ds_all.obs_YYYYMMDD.values),
-        obs_HHMMSS         =(["iOBS"], ds_all.obs_HHMMSS.values),
-        sample_x           =(["iSAMPLE"], ds_all.sample_x.values),
-        sample_y           =(["iSAMPLE"], ds_all.sample_y.values),
-        sample_z           =(["iSAMPLE"], ds_all.sample_z.values),
-        sample_type        =(["iSAMPLE"], ds_all.sample_type.values),
-        obs_val            =(["iOBS"], ds_all.obs_val.values),
-        obs_uncert         =(["iOBS"], np.ones(len(ds_all.sample_interp_i))*0.02),
-        sample_interp_XC11 =(["iOBS"], ds_all.sample_interp_XC11.values ),
-        sample_interp_YC11 =(["iOBS"], ds_all.sample_interp_YC11.values ),
-        sample_interp_XCNINJ =(["iOBS"], ds_all.sample_interp_XCNINJ.values ),
-        sample_interp_YCNINJ =(["iOBS"], ds_all.sample_interp_YCNINJ.values ),
-        sample_interp_i =(["iOBS"], ds_all.sample_interp_i.values ),
-        sample_interp_j =(["iOBS"], ds_all.sample_interp_j.values ),
-        sample_interp_w =(["iOBS", "iINTERP"], np.ones((len(ds_all.sample_interp_i),8))/8  )
-    ),
-)
+# Add a new dimension iSAMPLE (no coordinate attached)
+ds = ds.expand_dims({"iSAMPLE": nobs}).isel(iSAMPLE=0)  # makes empty dim
+ds = ds.assign_coords()  # remove automatic coordinate assignment
 
+# Now reassign variables from iOBS -> iSAMPLE
+vars_to_move = ["sample_lon", "sample_lat", "sample_depth", "sample_type"]
 
-data_dir = '/nobackup/sreich/swot/swot_obsfit_L3/'
-fname =  'swot_cycles_009_llc90_30_test_obsfit.nc'
-obs.to_netcdf(data_dir + fname)
+for v in vars_to_move:
+    if v in ds:
+        ds[v] = xr.DataArray(
+            ds[v].values,
+            dims=("iSAMPLE",),   # put it on iSAMPLE, not iOBS
+        )
+        ds[v].attrs.update({"note": f"moved from iOBS to iSAMPLE"})
+
+ds.to_netcdf("/scratch/shoshi/swot/obsfit_labsea/swot_obsfit_cycles_18thru20_labsea_L3v3.nc")

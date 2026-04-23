@@ -1,31 +1,29 @@
 #!/bin/bash
-#PBS -N regrid_swot
-#PBS -q devel
-#PBS -l select=4:ncpus=28:model=bro
-#PBS -l walltime=02:00:00
-#PBS -o outfile
-#PBS -e errfile
+#SBATCH -J swot_preproc 
+#SBATCH -o swot_preproc.%j.out
+#SBATCH -e swot_preproc.%j.err
+#SBATCH -N 1 
+#SBATCH -n 1
+#SBATCH -t 1:00:00
+#SBATCH --cpus-per-task=1
+#SBATCH --array=1-578%60
 
-cd $PBS_O_WORKDIR
-
-limit stacksize unlimited
-
-./usr/local/lib/init/global.profile
-module use -a /swbuild/analytix/tools/modulefiles
-module load miniconda3/v4
-source activate py38
-
-# 1. create text file which lists the python commands to execute
-python3 /home3/sreich/obsfit_preproc/filenames_hourly_map.py
-
-# 2. run regridding for all files individually
+set -eo pipefail
 
 date +%Y/%m/%d_%H:%M:%S.%3N >> regrid_swot_timing.txt
 
-/nasa/pkgsrc/toss4/2023Q3/bin/parallel -j 14 --slf $PBS_NODEFILE -a /home3/sreich/obsfit_preproc/cycle9_90_30_runs
+source /home/shoshi/mambaforge/etc/profile.d/conda.sh
+conda activate /home/shoshi/mambaforge/envs/py38
 
-date +%Y/%m/%d_%H:%M:%S.%3N >> regrid_swot_timing.txt
+# Get the command for this array index
+CMD=$(sed -n "${SLURM_ARRAY_TASK_ID}p" \
+    /home/shoshi/obsfit_preproc/cycle20_labsea_runs_L3v3)
 
-# 3. combine swot hourly files
-python3 /home3/sreich/obsfit_preproc/merge_files.py
+echo "[$(date)] Running task ${SLURM_ARRAY_TASK_ID}"
+echo "$CMD"
+
+eval "$CMD"
+
+#parallel -j $SLURM_CPUS_ON_NODE -a /home/shoshi/obsfit_preproc/cycle11_labsea_runs_L3v3
+#/usr/bin/parallel -j $SLURM_CPUS_ON_NODE -a /home/shoshi/obsfit_preproc/cycle11_labsea_runs_L3v3
 

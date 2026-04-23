@@ -1,9 +1,11 @@
-*_runs
+all_runs
+test_runs
+*_labsea_runs*
 errfile
 outfile
-*test*
+jobfiles/
 regrid_swot_timing.txt
-*.m
 .ipynb_checkpoints/
 */.ipynb_checkpoints
+regional_labsea/__pycache__
 __pycache__
