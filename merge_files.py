@@ -12,6 +12,7 @@ files = sorted(glob.glob("/scratch/shoshi/swot/obsfit_labsea/cycle1[8-9]_L3v3/*.
 datasets = [xr.open_dataset(f) for f in files]
 
 # Concatenate along iOBS
+# Note: concat will automatically include cycle, pass_no, track_id, line_id, and along_track_dist 
 ds = xr.concat(datasets, dim="iOBS", data_vars="all", coords="all", compat="override")
 
 # Get length of iOBS
@@ -22,7 +23,17 @@ ds = ds.expand_dims({"iSAMPLE": nobs}).isel(iSAMPLE=0)  # makes empty dim
 ds = ds.assign_coords()  # remove automatic coordinate assignment
 
 # Now reassign variables from iOBS -> iSAMPLE
-vars_to_move = ["sample_lon", "sample_lat", "sample_depth", "sample_type"]
+vars_to_move = [
+    "sample_lon", 
+    "sample_lat", 
+    "sample_depth", 
+    "sample_type",
+    "cycle",
+    "pass_no",
+    "track_id",
+    "line_id",
+    "along_track_dist"
+]
 
 for v in vars_to_move:
     if v in ds:

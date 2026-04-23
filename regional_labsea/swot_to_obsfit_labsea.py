@@ -8,6 +8,30 @@ from date_utils import datenum_xr, split_time_vars_int
 sys.path.append('/home/shoshi/MITgcm_c68r/MITgcm/utils/python/MITgcmutils')
 from MITgcmutils import rdmds
 
+# Helper Function for Distance
+def calc_along_track_dist(lats, lons):
+    """
+    Computes cumulative distance along a track in kilometers using Haversine.
+    """
+    from math import radians, cos, sin, asin, sqrt
+    
+    def haversine(lon1, lat1, lon2, lat2):
+        r = 6371 # radius of earth in km
+        lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+        dlon = lon2 - lon1 
+        dlat = lat2 - lat1 
+        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+        c = 2 * asin(sqrt(a)) 
+        return c * r
+
+    distances = [0]
+    for i in range(1, len(lats)):
+        dist = haversine(lons[i-1], lats[i-1], lons[i], lats[i])
+        distances.append(distances[-1] + dist)
+    return np.array(distances)
+
+
+
 local_filepath='/scratch/shoshi/swot/L3v3/cycle20/'
 localbox=[-80+360, -40+360, 46, 78] # Labrador Sea
 
@@ -99,6 +123,28 @@ else:
 ds_sub = ds_expert_sub.isel(num_lines=lines, num_pixels=tracks)
 ds_sub = ds_sub.where(ds_sub.ssh_filtered > -9000, drop=True)
 
+# Geometry Metadata and Distance
+num_lines_shape = ds_sub.ssh_filtered.shape[0]
+num_pixels_shape = ds_sub.ssh_filtered.shape[1]
+
+line_indices, track_indices = np.meshgrid(
+    np.arange(num_lines_shape), 
+    np.arange(num_pixels_shape), 
+    indexing='ij'
+)
+
+dist_2d = np.zeros_like(ds_sub.ssh_filtered.values)
+for t in range(num_pixels_shape):
+    track_lats = ds_sub.latitude.values[:, t]
+    track_lons = ds_sub.longitude.values[:, t]
+    dist_2d[:, t] = calc_along_track_dist(track_lats, track_lons)
+
+ds_sub['track_id'] = (('num_lines', 'num_pixels'), track_indices)
+ds_sub['line_id'] = (('num_lines', 'num_pixels'), line_indices)
+ds_sub['along_track_dist'] = (('num_lines', 'num_pixels'), dist_2d)
+
+
+
 # create obsfit object
 ds_sub['obs_date'] = datenum_xr(ds_sub["time"])
 
@@ -120,6 +166,12 @@ ds_obsfit = xr.Dataset(
         sample_depth       =(["iOBS"], np.zeros(len(ds_sub.ssh_filtered.values.ravel()))),
         obs_val            =(["iOBS"], ds_sub.ssh_filtered.values.ravel()),
         obs_uncert         =(["iOBS"], ds_sub.ssh_sigma_total.values.ravel()),
+        # Metadata for Spectral Analysis
+        cycle              =(["iOBS"], np.full(ds_sub.ssh_filtered.values.ravel().shape, int(cycle))),
+        pass_no            =(["iOBS"], np.full(ds_sub.ssh_filtered.values.ravel().shape, int(pass_no))),
+        track_id           =(["iOBS"], ds_sub.track_id.values.ravel()),
+        line_id            =(["iOBS"], ds_sub.line_id.values.ravel()),
+        along_track_dist   =(["iOBS"], ds_sub.along_track_dist.values.ravel()),
     ),
 )
 
