@@ -32,12 +32,13 @@ def calc_along_track_dist(lats, lons):
 
 
 
-local_filepath='/scratch/shoshi/swot/L3v3/cycle20/'
-localbox=[-80+360, -40+360, 46, 78] # Labrador Sea
-
 filename = sys.argv[1]
 pass_no = filename.split('_')[6]
 cycle = filename.split('_')[5]
+cycle = int(cycle)
+
+local_filepath=f'/scratch/shoshi/swot/L3v3/cycle{cycle}/'
+localbox=[-80+360, -40+360, 46, 78] # Labrador Sea
 
 res = sys.argv[2]
 
@@ -203,7 +204,7 @@ ds_obsfit['obs_val'] = xr.where(depth_at_obs >= 200, ds_obsfit.obs_val, -9999)
 ds_obsfit = ds_obsfit.where(ds_obsfit.obs_val > -9000, drop=True)
 
 # write out
-data_dir = '/scratch/shoshi/swot/obsfit_labsea/cycle20_L3v3/'
+data_dir = f'/scratch/shoshi/swot/obsfit_labsea/cycle{cycle}_L3v3/'
 os.makedirs(data_dir, exist_ok=True)
 fname = filename.split('.')[0] + '_obsfit.nc'
 ds_obsfit.to_netcdf(data_dir + fname)

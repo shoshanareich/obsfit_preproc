@@ -5,8 +5,9 @@ import numpy as np
 
 
 # Get a list of all NetCDF files
+files = sorted(glob.glob("/scratch/shoshi/swot/obsfit_labsea/cycle9_L3v3/*.nc") + glob.glob("/scratch/shoshi/swot/obsfit_labsea/cycle1[0-1]_L3v3/*.nc"))
 #files = sorted(glob.glob("/scratch/shoshi/swot/obsfit_labsea/cycle1[2-4]_L3v3/*.nc"))
-files = sorted(glob.glob("/scratch/shoshi/swot/obsfit_labsea/cycle1[8-9]_L3v3/*.nc") + glob.glob("/scratch/shoshi/swot/obsfit_labsea/cycle20_L3v3/*.nc"))
+#files = sorted(glob.glob("/scratch/shoshi/swot/obsfit_labsea/cycle1[8-9]_L3v3/*.nc") + glob.glob("/scratch/shoshi/swot/obsfit_labsea/cycle20_L3v3/*.nc"))
 
 # Open all files as a list of xarray datasets
 datasets = [xr.open_dataset(f) for f in files]
@@ -43,4 +44,4 @@ for v in vars_to_move:
         )
         ds[v].attrs.update({"note": f"moved from iOBS to iSAMPLE"})
 
-ds.to_netcdf("/scratch/shoshi/swot/obsfit_labsea/swot_obsfit_cycles_18thru20_labsea_L3v3.nc")
+ds.to_netcdf("/scratch/shoshi/swot/obsfit_labsea/swot_obsfit_cycles_9thru11_labsea_L3v3.nc")

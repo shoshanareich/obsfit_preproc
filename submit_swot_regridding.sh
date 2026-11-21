@@ -17,7 +17,7 @@ conda activate /home/shoshi/mambaforge/envs/py38
 
 # Get the command for this array index
 CMD=$(sed -n "${SLURM_ARRAY_TASK_ID}p" \
-    /home/shoshi/obsfit_preproc/cycle20_labsea_runs_L3v3)
+    /home/shoshi/obsfit_preproc/cycle11_labsea_runs_L3v3)
 
 echo "[$(date)] Running task ${SLURM_ARRAY_TASK_ID}"
 echo "$CMD"

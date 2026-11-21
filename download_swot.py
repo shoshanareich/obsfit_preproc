@@ -3,8 +3,8 @@ import os
 from ftplib import FTP
 
 host = "ftp-access.aviso.altimetry.fr"
-user = "sreich@utexas.edu"
-password = "IqannU"
+user = os.environ["AVISO_USER"]
+password = os.environ["AVISO_PASSWORD"]
 
 cycle_num=sys.argv[1]
 
